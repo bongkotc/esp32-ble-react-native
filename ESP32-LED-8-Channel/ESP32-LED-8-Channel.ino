@@ -2,8 +2,7 @@
 
 const int LED_BUILTIN = 2;
 
-String bleName = "DO_IOT";  //Tart Smart IoT
-// String bleName = "LED 8 Bits";  //Tart Smart IoT
+String bleName = "DO_IOT";  //ชื่อที่แสดงเมื่อใช้อุปกรณ์ค้นหา
 // BLE UUIDs
 #define SERVICE_UUID_LED "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define CHARACTERISTIC_UUID_LED1 "beb5483e-36e1-4688-b7f5-ea07361b26a7"
@@ -65,9 +64,9 @@ void setup() {
 
 void loop() {
   if (deviceConnected) {
-    ledBlink(200);
+    ledBlink(200);//ถ้ามีอุปกรณ์อื่นมาเชื่อมต่อจะกระพริบ 200 ms
   } else {
-    ledBlink(1000);
+    ledBlink(1000);//ถ้าไม่มีอุปกรณ์อื่นมาเชื่อมต่อจะกระพริบ 1000 ms
   }
 
   checkDeviceConnected();//ตรวจสอบการเชื่อมต่อ
@@ -88,11 +87,9 @@ void loop() {
         if(newValue=="0"){
           //อัพเดตค่าไปที่ Characteristic
           digitalWrite(ledPins[0],HIGH);
-          // pCharacteristicLed1->setValue(String(!digitalRead(ledPins[0])));
         }
         else if(newValue=="1"){
           digitalWrite(ledPins[0],LOW);
-          // pCharacteristicLed1->setValue(String(!digitalRead(ledPins[0])));
         }
       }
     }
@@ -108,11 +105,9 @@ void loop() {
         if(newValue=="0"){
           //อัพเดตค่าไปที่ Characteristic
           digitalWrite(ledPins[1],HIGH);
-          // pCharacteristicLed2->setValue(String(!digitalRead(ledPins[1])));
         }
         else if(newValue=="1"){
           digitalWrite(ledPins[1],LOW);
-          // pCharacteristicLed2->setValue(String(!digitalRead(ledPins[1])));
         }
       }
     }
@@ -128,11 +123,9 @@ void loop() {
         if(newValue=="0"){
           //อัพเดตค่าไปที่ Characteristic
           digitalWrite(ledPins[2],HIGH);
-          // pCharacteristicLed3->setValue(String(!digitalRead(ledPins[2])));
         }
         else if(newValue=="1"){
           digitalWrite(ledPins[2],LOW);
-          // pCharacteristicLed3->setValue(String(!digitalRead(ledPins[2])));
         }
       }
     }
@@ -148,11 +141,9 @@ void loop() {
         if(newValue=="0"){
           //อัพเดตค่าไปที่ Characteristic
           digitalWrite(ledPins[3],HIGH);
-          // pCharacteristicLed4->setValue(String(!digitalRead(ledPins[3])));
         }
         else if(newValue=="1"){
           digitalWrite(ledPins[3],LOW);
-          // pCharacteristicLed4->setValue(String(!digitalRead(ledPins[3])));
         }
       }
     }
@@ -168,11 +159,9 @@ void loop() {
         if(newValue=="0"){
           //อัพเดตค่าไปที่ Characteristic
           digitalWrite(ledPins[4],HIGH);
-          // pCharacteristicLed5->setValue(String(!digitalRead(ledPins[4])));
         }
         else if(newValue=="1"){
           digitalWrite(ledPins[4],LOW);
-          // pCharacteristicLed5->setValue(String(!digitalRead(ledPins[4])));
         }
       }
     }
@@ -188,11 +177,9 @@ void loop() {
         if(newValue=="0"){
           //อัพเดตค่าไปที่ Characteristic
           digitalWrite(ledPins[5],HIGH);
-          // pCharacteristicLed6->setValue(String(!digitalRead(ledPins[5])));
         }
         else if(newValue=="1"){
           digitalWrite(ledPins[5],LOW);
-          // pCharacteristicLed6->setValue(String(!digitalRead(ledPins[5])));
         }
       }
     }
@@ -208,11 +195,9 @@ void loop() {
         if(newValue=="0"){
           //อัพเดตค่าไปที่ Characteristic
           digitalWrite(ledPins[6],HIGH);
-          // pCharacteristicLed7->setValue(String(!digitalRead(ledPins[6])));
         }
         else if(newValue=="1"){
           digitalWrite(ledPins[6],LOW);
-          // pCharacteristicLed7->setValue(String(!digitalRead(ledPins[6])));
         }
       }
     }
@@ -227,11 +212,9 @@ void loop() {
         if(newValue=="0"){
           //อัพเดตค่าไปที่ Characteristic
           digitalWrite(ledPins[7],HIGH);
-          // pCharacteristicLed8->setValue(String(!digitalRead(ledPins[7])));
         }
         else if(newValue=="1"){
           digitalWrite(ledPins[7],LOW);
-          // pCharacteristicLed8->setValue(String(!digitalRead(ledPins[7])));
         }
       }
     }
@@ -282,25 +265,26 @@ void updateStatusPinsToBLE(){
     receivedValueLedState += receivedValueLed8;
 
     
-
+    //รุปแบบของข้อมูลที่จะใช้ส่ง BLE จะเป็น 0,0,0,0,0,0,0,0 
     pCharacteristicLedState->setValue(receivedValueLedState);
 
     if(oldReceivedValueLedState!=receivedValueLedState){
       oldReceivedValueLedState = receivedValueLedState;
-      Serial.println("Status Change");
-      pCharacteristicLedState->notify();
+      Serial.println("สถานะ Pin ของ LED เปลี่ยน");
+      pCharacteristicLedState->notify();//แจ้ง Update ข้อมูล เพื่อไปทำ Callback ฝั่ง Client
     }
     
   }
 }
 
 void setupBLE() {
-  NimBLEDevice::init(bleName.c_str());  //"ESP32_BLE"
+  NimBLEDevice::init(bleName.c_str());  
 
-  pServer = NimBLEDevice::createServer();
+  pServer = NimBLEDevice::createServer();//สร้าง BLE Server
 
-  NimBLEService* pService = pServer->createService(SERVICE_UUID_LED);//ตั้งค่า Service
+  NimBLEService* pService = pServer->createService(SERVICE_UUID_LED);//สร้าง Service
 
+  //เตรียมข้อมูล Default ในครั้งแรก
   receivedValueLed1 = String(!digitalRead(ledPins[0])).c_str();
   receivedValueLed2 = String(!digitalRead(ledPins[1])).c_str();
   receivedValueLed3 = String(!digitalRead(ledPins[2])).c_str();
@@ -309,6 +293,7 @@ void setupBLE() {
   receivedValueLed6 = String(!digitalRead(ledPins[5])).c_str();
   receivedValueLed7 = String(!digitalRead(ledPins[6])).c_str();
   receivedValueLed8 = String(!digitalRead(ledPins[7])).c_str();
+
   //LED 1
   pCharacteristicLed1 = pService->createCharacteristic(
     CHARACTERISTIC_UUID_LED1, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE);//ตั้งค่าให้สามารถอ่านและเขียน Characteristic ของ LED 1 ได้
@@ -351,7 +336,7 @@ void setupBLE() {
 
   //LED STATE
   pCharacteristicLedState = pService->createCharacteristic(
-    CHARACTERISTIC_UUID_LED_STATE, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);//ตั้งค่าให้สามารถอ่านและเขียน Characteristic ของ LED 8 ได้
+    CHARACTERISTIC_UUID_LED_STATE, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);//ตั้งค่าให้สามารถอ่านและแจ้งเมื่อมีการ Update ข้อมูล Characteristic ของ LED 8 ได้
   pCharacteristicLedState->setValue(receivedValueLedState);//อ่านค่าสถานะ pin ของ LED 8 และส่งเข้าไปที่ BLE
 
   pCharacteristicLedState->createDescriptor(
@@ -361,11 +346,10 @@ void setupBLE() {
   );
 
   pService->start();//Start Service
-  // pServer->getAdvertising()->start();//รอรับ Advertising
 
-  NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
+  NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();//เตรียมข้อมูลการ Advertising
   pAdvertising->addServiceUUID(SERVICE_UUID_LED);
-  pAdvertising->start();
+  pAdvertising->start();//Start Advertising
   
   Serial.println("กำลังรอ... อุปกรณ์ภายนอกมาเชื่อมต่อ...");
 }
@@ -390,6 +374,7 @@ void checkDeviceConnected() {
   }
 }
 
+//สั่งงานให้ LED ติดกระพริบตามค่า delay
 void ledBlink(int delay) {
   static unsigned long lastMsg = 0;
   unsigned long now = millis();
