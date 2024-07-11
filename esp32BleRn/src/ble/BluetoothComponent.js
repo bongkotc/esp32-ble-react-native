@@ -91,6 +91,40 @@ const BluetoothComponent = () => {
     const BleManagerModule = NativeModules.BleManager;
     const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 
+    const handleUpdateValueForCharacteristic = (data) => {
+      // console.log('Notification data:', data);
+      // setNotificationData(data.value);
+      console.log('Notification data:', data);
+      const { characteristic, value } = data;
+      // setNotificationData(prevData => ({
+      //   ...prevData,
+      //   [characteristic]: value,
+      // }));
+      
+      try {
+        if(characteristic===CHARACTERISTIC_UUID_LED_STATUS){
+          if(value!=null){
+            const string = value.map(byte => String.fromCharCode(byte)).join('');
+            console.log(`Noti1: ${JSON.stringify(string)}`);
+            const stateLeds = string.split(',');
+            console.log(`Noti2: ${JSON.stringify(stateLeds)}`);
+            if (stateLeds.length == 8) {
+              setLed1State(prev => (stateLeds[0] == '1' ? true : false));
+              setLed2State(prev => (stateLeds[1] == '1' ? true : false));
+              setLed3State(prev => (stateLeds[2] == '1' ? true : false));
+              setLed4State(prev => (stateLeds[3] == '1' ? true : false));
+              setLed5State(prev => (stateLeds[4] == '1' ? true : false));
+              setLed6State(prev => (stateLeds[5] == '1' ? true : false));
+              setLed7State(prev => (stateLeds[6] == '1' ? true : false));
+              setLed8State(prev => (stateLeds[7] == '1' ? true : false));
+            }
+          }
+        }
+      } catch (error) {
+        console.log(`handleUpdateValueForCharacteristic error: `,error);
+      }
+    };
+
     const handleDiscoverPeripheral = peripheral => {
     //   if (peripheral.name) {
     //     setDevices(prevDevices => {
@@ -116,6 +150,12 @@ const BluetoothComponent = () => {
       handleDiscoverPeripheral,
     );
 
+    bleManagerEmitter.addListener(
+      'BleManagerDidUpdateValueForCharacteristic', 
+      handleUpdateValueForCharacteristic
+    );
+
+
     return () => {
       bleManagerEmitter.removeAllListeners('BleManagerDiscoverPeripheral');
     };
@@ -126,7 +166,7 @@ const BluetoothComponent = () => {
   useEffect(() => {
     const interval = setInterval(async () => {
       readLedStatus();
-    }, 200); // Set to 200 millisecond
+    }, 1000); // Set to 200 millisecond
 
     return () => {
       clearInterval(interval); // Clean up interval on unmount
@@ -343,12 +383,27 @@ const BluetoothComponent = () => {
     try {
       await BleManager.connect(device.id);
       //   setConnectedDevice(device);
+
+
+
+
+
       setConnectedDevice(prev => device);
       connetedClient.current = device;
       let retrieveServicesInfo = await BleManager.retrieveServices(device.id);
       console.log(
         `retrieveServicesInfo: ${JSON.stringify(retrieveServicesInfo)}`,
       );
+
+      try {
+        await BleManager.startNotification(device.id, SERVICE_UUID, CHARACTERISTIC_UUID_LED_STATUS);
+      } catch (error) {
+        console.log(
+          `startNotification error: ${JSON.stringify(error)}`,
+        );
+      }
+      
+
       const services = await BleManager.getConnectedPeripherals([device.id]);
       console.log(`services: ${JSON.stringify(services)}`);
       if (services.length > 0) {

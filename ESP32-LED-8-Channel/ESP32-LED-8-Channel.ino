@@ -3,6 +3,7 @@
 const int LED_BUILTIN = 2;
 
 String bleName = "DO_IOT";  //Tart Smart IoT
+// String bleName = "LED 8 Bits";  //Tart Smart IoT
 // BLE UUIDs
 #define SERVICE_UUID_LED "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define CHARACTERISTIC_UUID_LED1 "beb5483e-36e1-4688-b7f5-ea07361b26a7"
@@ -37,6 +38,7 @@ std::string receivedValueLed6 = "";
 std::string receivedValueLed7 = "";
 std::string receivedValueLed8 = "";
 std::string receivedValueLedState = "";
+std::string oldReceivedValueLedState = "";
 
 //กำหนดค่า GPIO pin ให้กับ LED
 const int ledPins[] = {18, 4, 5, 12, 13, 14, 15, 16};
@@ -242,7 +244,7 @@ void loop() {
 void updateStatusPinsToBLE(){
   static unsigned long lastMsg = 0;
   unsigned long now = millis();
-  if (now - lastMsg > 50) {
+  if (now - lastMsg > 10) {
     lastMsg = now;
     receivedValueLed1 = String(!digitalRead(ledPins[0])).c_str();
     receivedValueLed2 = String(!digitalRead(ledPins[1])).c_str();
@@ -279,7 +281,16 @@ void updateStatusPinsToBLE(){
     receivedValueLedState += ",";
     receivedValueLedState += receivedValueLed8;
 
+    
+
     pCharacteristicLedState->setValue(receivedValueLedState);
+
+    if(oldReceivedValueLedState!=receivedValueLedState){
+      oldReceivedValueLedState = receivedValueLedState;
+      Serial.println("Status Change");
+      pCharacteristicLedState->notify();
+    }
+    
   }
 }
 
@@ -340,11 +351,22 @@ void setupBLE() {
 
   //LED STATE
   pCharacteristicLedState = pService->createCharacteristic(
-    CHARACTERISTIC_UUID_LED_STATE, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE);//ตั้งค่าให้สามารถอ่านและเขียน Characteristic ของ LED 8 ได้
-  pCharacteristicLed8->setValue(receivedValueLedState);//อ่านค่าสถานะ pin ของ LED 8 และส่งเข้าไปที่ BLE
+    CHARACTERISTIC_UUID_LED_STATE, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);//ตั้งค่าให้สามารถอ่านและเขียน Characteristic ของ LED 8 ได้
+  pCharacteristicLedState->setValue(receivedValueLedState);//อ่านค่าสถานะ pin ของ LED 8 และส่งเข้าไปที่ BLE
+
+  pCharacteristicLedState->createDescriptor(
+    CHARACTERISTIC_UUID_LED_STATE,
+    NIMBLE_PROPERTY::READ |
+    NIMBLE_PROPERTY::WRITE
+  );
 
   pService->start();//Start Service
-  pServer->getAdvertising()->start();//รอรับ Advertising
+  // pServer->getAdvertising()->start();//รอรับ Advertising
+
+  NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(SERVICE_UUID_LED);
+  pAdvertising->start();
+  
   Serial.println("กำลังรอ... อุปกรณ์ภายนอกมาเชื่อมต่อ...");
 }
 
